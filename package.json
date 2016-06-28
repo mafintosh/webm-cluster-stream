@@ -1,6 +1,6 @@
 {
   "name": "webm-cluster-stream",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Transform stream that splits a webm stream into a header buffer and cluster buffers",
   "main": "index.js",
   "dependencies": {

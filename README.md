@@ -10,10 +10,10 @@ npm install webm-cluster-stream
 ## Usage
 
 ``` js
-var clusters = require('webm-cluster-stream')
-var fs = require('fs')
+const WCS = require('webm-cluster-stream')
+const fs = require('fs')
 
-var cl = clusters()
+const cl = new WCS()
 
 cl.once('data', function (header) {
   // first buffer is header

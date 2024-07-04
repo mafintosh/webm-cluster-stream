@@ -4,11 +4,9 @@
   "description": "Transform stream that splits a webm stream into a header buffer and cluster buffers",
   "main": "index.js",
   "dependencies": {
-    "ebml": "^2.1.0",
-    "through2": "^2.0.1"
-  },
-  "devDependencies": {
-    "standard": "^7.1.2"
+    "b4a": "^1.6.6",
+    "ebml": "^3.0.0",
+    "streamx": "^2.18.0"
   },
   "repository": {
     "type": "git",
@@ -22,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/mafintosh/webm-cluster-stream/issues"
   },
-  "homepage": "https://github.com/mafintosh/webm-cluster-stream"
+  "homepage": "https://github.com/mafintosh/webm-cluster-stream",
+  "devDependencies": {
+    "standard": "^17.1.0"
+  }
 }

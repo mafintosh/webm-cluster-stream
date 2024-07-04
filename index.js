@@ -1,39 +1,77 @@
-var ebml = require('ebml')
-var through = require('through2')
+const { Decoder } = require('ebml')
+const b4a = require('b4a')
+const { Duplex } = require('streamx')
 
-module.exports = createStream
+module.exports = class WebmClusterStream extends Duplex {
+  constructor () {
+    super()
 
-function createStream () {
-  var enc = new ebml.Encoder()
-  var dec = new ebml.Decoder()
-  var bufs = []
+    this.decoder = new Decoder()
+    this.buffer = []
+    this.byteOffset = 0
+    this._ondrain = null
 
-  enc.on('data', function (data) {
-    bufs.push(data)
-  })
+    this.decoder.on('data', this._ondecode.bind(this))
+    this.decoder.on('end', this._onend.bind(this))
+    this.decoder.on('error', this.destroy.bind(this))
+    this.decoder.on('drain', this._continueWrite.bind(this))
+  }
 
-  dec.on('data', function (data) {
+  _onend () {
+    if (this.buffer.length === 0) return
+    const chunk = this._combine()
+    this.push(chunk)
+    this.push(null)
+  }
+
+  _ondecode (data) {
     if (data[0] === 'start' && data[1].name === 'Cluster') {
-      stream.push(Buffer.concat(bufs))
-      bufs = []
+      const chunk = this._combine()
+      const rel = data[1].start - this.byteOffset
+      const prev = chunk.subarray(0, rel)
+      this.buffer.push(chunk.subarray(rel))
+      this.byteOffset += rel
+      if (this.push(prev) === false) this.decoder.pause()
     }
+  }
 
-    enc.write(data)
-  })
-
-  var stream = through(write, end)
-  return stream
-
-  function write (data, _, cb) {
-    dec.write(data)
+  _read (cb) {
+    this.decoder.resume()
+    this._continueWrite()
     cb(null)
   }
 
-  function end (cb) {
-    dec.end()
-    enc.end()
-    stream.push(Buffer.concat(bufs))
-    bufs = []
+  _write (data, cb) {
+    this.buffer.push(data)
+
+    if (this.decoder.write(data) === false) {
+      this._ondrain = cb
+      return
+    }
+
     cb(null)
+  }
+
+  _predestroy () {
+    this._continueWrite()
+  }
+
+  _continueWrite () {
+    const cb = this._ondrain
+    if (cb === null) return
+    this._ondrain = null
+    cb(null)
+  }
+
+  _final (cb) {
+    this.decoder.end()
+    cb(null)
+  }
+
+  _combine () {
+    const buffer = this.buffer
+    this.buffer = []
+    const chunk = buffer.length === 1 ? buffer[0] : b4a.concat(buffer)
+    return chunk
   }
 }
